@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 
 # source files
-set (SRC timedemo.cc)
+set (SRC fileUtils.cc Demo.cc timedemo.cc)
 
 # program name
 set (PROG timedemo)
