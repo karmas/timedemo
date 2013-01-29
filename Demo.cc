@@ -17,6 +17,9 @@ Demo::Demo(const std::string &title,
   myViewer.addCoordinateSystem(170.0);
   myViewer.initCameraParameters();
 
+  std::cout << "Press LEFT and RIGHT arrow keys to cycle through clouds"
+    << std::endl;
+
   myViewer.registerKeyboardCallback(viewerKeyHandler, (void *)this);
   showCurrIndex();
   myViewer.spin();
@@ -38,9 +41,12 @@ void Demo::showCurrIndex()
 {
   myViewer.removeAllPointClouds();
 
-  std::cout << "curr time index: " << currIndex << std::endl;
+  std::cout << "showing time index: " << currIndex << std::endl;
 
   myViewer.addPointCloud(myLaserClouds[currIndex], "laser");
+
+  myViewer.removeShape("sphere");
+  myViewer.addSphere((*myRobotCloud)[currIndex], 10);
 }
 
 
