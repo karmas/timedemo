@@ -8,7 +8,7 @@ set (PROG timedemo)
 
 # find PCL library
 find_package (PCL 1.3 REQUIRED
-  COMPONENTS common io)
+  COMPONENTS common io visualization)
 
 # PCL headers location
 include_directories (${PCL_INCLUDE_DIRS})
@@ -22,4 +22,5 @@ add_executable (${PROG} ${SRC})
 # link the libraries
 target_link_libraries (${PROG}
   ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES}
+  ${PCL_VISUALIZATION_LIBRARIES}
 )

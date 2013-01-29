@@ -6,6 +6,7 @@
 #include "pcl/io/pcd_io.h"
 #include "pcl/point_types.h"
 #include "pcl/point_cloud.h"
+#include "pcl/visualization/cloud_viewer.h"
 
 
 // Check whether a directory name is given on the command line and whether
@@ -36,7 +37,6 @@ int pcdFileFilter(const struct dirent* entry)
   return (fnmatch(pcdFilePattern, entry->d_name, FNM_CASEFOLD) == 0) 
     ? 1 : 0;
 }
-
 
 // needed for qsort function to compare 2 numbers
 int numCompare(const void *v1, const void *v2)
@@ -97,7 +97,9 @@ void getSortedFileNames(struct dirent **unsortedList, int n,
 // First looks through the directory for pcd files.
 // Then creates an array of file names sorted by time stamp values.
 // Stores this cloud files in vector.
-void readCloudFiles(const std::string &sourceDir)
+void readCloudFiles(const std::string &sourceDir,
+    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> &laserClouds,
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr &robotCloud)
 {
   std::cout << "Reading from source directory: " << sourceDir << std::endl;
 
@@ -121,8 +123,10 @@ void readCloudFiles(const std::string &sourceDir)
     // file could not be loaded
     if (pcl::io::loadPCDFile(fullName, cloud) == -1)
       std::cout << "Could not load: " << sortedFileNames[0] << std::endl;
-    else
+    else {
+      robotCloud = cloud.makeShared();
       std::cout << "Loaded: " << sortedFileNames[0] << std::endl;
+    }
 
     // read the laser clouds according to time stamp order
     for (int i = 1; i < sortedFileNames.size(); i++) {
@@ -131,8 +135,12 @@ void readCloudFiles(const std::string &sourceDir)
       // file could not be loaded
       if (pcl::io::loadPCDFile(fullName, cloud) == -1)
 	std::cout << "Could not load: " << sortedFileNames[i] << std::endl;
-      else
+      else {
+	// store a copy of the cloud in the list
+	laserClouds.push_back(cloud.makeShared());
+
 	std::cout << "Loaded: " << sortedFileNames[i] << std::endl;
+      }
     }
   }
   else {
@@ -148,6 +156,79 @@ void readCloudFiles(const std::string &sourceDir)
 }
 
 
+// The time stamp demo program class
+class Demo {
+public:
+  Demo(const std::string &title,
+    const std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> &laserClouds,
+    const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &robotCloud);
+  void incrementIndex();
+  void decrementIndex();
+  void showCurrIndex();
+
+private:
+  pcl::visualization::PCLVisualizer myViewer;
+  const std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> &myLaserClouds;
+  const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &myRobotCloud;
+  int currIndex;
+};
+
+
+// handles keyboard events captured by the demo viewer
+void viewerKeyHandler(const pcl::visualization::KeyboardEvent &ke,
+    		      void *cookie = NULL)
+{
+  Demo *demo = static_cast<Demo *>(cookie);
+
+  if (ke.getKeySym() == "Right" && ke.keyDown()) {
+    demo->incrementIndex();
+    demo->showCurrIndex();
+  }
+  else if (ke.getKeySym() == "Left" && ke.keyDown()) {
+    demo->decrementIndex();
+    demo->showCurrIndex();
+  }
+}
+
+// initializes the viewer and shows the first time stamped cloud
+Demo::Demo(const std::string &title,
+  const std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> &laserClouds,
+  const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &robotCloud)
+  : myViewer(title), 
+    myLaserClouds(laserClouds),
+    myRobotCloud(robotCloud),
+    currIndex(0)
+{
+  // initialize viewer
+  myViewer.setBackgroundColor(0,0,0);
+  myViewer.addCoordinateSystem(170.0);
+  myViewer.initCameraParameters();
+
+  myViewer.registerKeyboardCallback(viewerKeyHandler, (void *)this);
+  showCurrIndex();
+  myViewer.spin();
+}
+
+void Demo::incrementIndex()
+{
+  currIndex++;
+  if (currIndex >= myLaserClouds.size()) currIndex = 0;
+}
+
+void Demo::decrementIndex()
+{
+  currIndex--;
+  if (currIndex < 0) currIndex = myLaserClouds.size() - 1;
+}
+
+void Demo::showCurrIndex()
+{
+  myViewer.removeAllPointClouds();
+
+  std::cout << "curr time index: " << currIndex << std::endl;
+
+  myViewer.addPointCloud(myLaserClouds[currIndex], "laser");
+}
 
 
 int main(int argc, char* argv[])
@@ -160,11 +241,14 @@ int main(int argc, char* argv[])
   }
 
   // directory exists so read the files into memory
-
   std::string sourceDir(argv[1]);
   sourceDir += "/";
-  readCloudFiles(sourceDir);
+  std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> laserClouds;
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr robotCloud;
+  readCloudFiles(sourceDir, laserClouds, robotCloud);
 
+  // now display the demo
+  Demo demo("TIME STAMP DEMO", laserClouds, robotCloud);
 
   return 0;
 }
