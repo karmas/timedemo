@@ -51,8 +51,9 @@ void Demo::showCurrIndex()
     rit++; lit++;
   }
 
-  // now display them
-  myViewer.addSphere((*rit)->point, 10);
+  // display the robot location as a sphere of same color
+  myViewer.addSphere((*rit)->point, 10.0,
+		     (*rit)->point.r, (*rit)->point.g, (*rit)->point.b);
   myViewer.addPointCloud((*lit)->getCloud(), "laser");
   std::cout << currIndex << ") " << (*rit)->timeStamp << std::endl;
   //std::cout << currIndex << ") " << (*lit)->getTimeStamp() << std::endl;
