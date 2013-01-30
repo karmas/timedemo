@@ -62,18 +62,12 @@ void getSortedFileNames(struct dirent **unsortedList, int n,
   // first get all the time stamp values from the file names
   for (int i = 0; i < n; i++) {
     timeStamp = unsortedList[i]->d_name;
+    // get rid of the extension
+    timeStamp = timeStamp.substr(0, timeStamp.rfind('.'));
 
-    int timeStampIndex;
-    // time stamp is there so a laser point cloud file
-    if ((timeStampIndex = timeStamp.find(SEPARATOR)) != std::string::npos) {
-      timeStamp = timeStamp.substr(timeStampIndex+1,
-	  timeStamp.find('.', timeStampIndex) - timeStampIndex - 1);
+    // the laser point clouds
+    if (timeStamp != "path") {
       timeStampValues[t++] = atoi(timeStamp.c_str());
-    }
-    // no time stamp means robot location point cloud
-    else {
-      // use this to get the ip address
-      ipAddr = timeStamp.substr(0, timeStamp.rfind('.'));
     }
   }
 
@@ -81,13 +75,13 @@ void getSortedFileNames(struct dirent **unsortedList, int n,
   qsort(timeStampValues, n-1, sizeof(int), numCompare);
 
   // add the robot cloud file as the first one
-  sortedFileNames.push_back(ipAddr + suffix);
+  sortedFileNames.push_back("path" + suffix);
   
   // fill up the sorted file names array
   for (int j = 0; j < n-1; j++) {
     std::ostringstream os;
     os << timeStampValues[j];
-    sortedFileNames.push_back(ipAddr + SEPARATOR + os.str() + suffix);
+    sortedFileNames.push_back(os.str() + suffix);
   }
 }
 
@@ -109,7 +103,7 @@ void readCloudFiles(const std::string &sourceDir,
 
   // no error occurred scanning the directory
   if (n != -1) {
-    // get an sorted order of file names
+    // get a sorted order of file names
     std::vector<std::string> sortedFileNames;
     getSortedFileNames(namelist, n, sortedFileNames);
 
