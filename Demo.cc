@@ -5,11 +5,11 @@
 
 // initializes the viewer and shows the first time stamped cloud
 Demo::Demo(const std::string &title,
-  const std::list<TSCloud *> &laserClouds,
-  const MyCloud::Ptr &robotCloud)
+  const std::list<RobotInfo *> &robotInfos,
+  const std::list<TSCloud *> &laserClouds)
   : myViewer(title), 
+    myRobotInfos(robotInfos),
     myLaserClouds(laserClouds),
-    myRobotCloud(robotCloud),
     currIndex(0)
 {
   // initialize viewer
@@ -39,15 +39,23 @@ void Demo::decrementIndex()
 
 void Demo::showCurrIndex()
 {
+  // remove previous robot position
+  myViewer.removeShape("sphere");
+  // remove previous cloud
   myViewer.removeAllPointClouds();
 
-  std::list<TSCloud *>::const_iterator it = myLaserClouds.begin();
-  for (int i = 0; i < currIndex; i++) it++;
-  myViewer.addPointCloud((*it)->getCloud(), "laser");
-  std::cout << currIndex << ") " << (*it)->getTimeStamp() << std::endl;
+  // find iterators to current robot position and laser point cloud
+  std::list<RobotInfo *>::const_iterator rit = myRobotInfos.begin();
+  std::list<TSCloud *>::const_iterator lit = myLaserClouds.begin();
+  for (int i = 0; i < currIndex; i++) {
+    rit++; lit++;
+  }
 
-  myViewer.removeShape("sphere");
-  //myViewer.addSphere((*myRobotCloud)[currIndex], 10);
+  // now display them
+  myViewer.addSphere((*rit)->point, 10);
+  myViewer.addPointCloud((*lit)->getCloud(), "laser");
+  std::cout << currIndex << ") " << (*rit)->timeStamp << std::endl;
+  //std::cout << currIndex << ") " << (*lit)->getTimeStamp() << std::endl;
 }
 
 

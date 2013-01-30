@@ -43,17 +43,11 @@ int pcdFileFilter(const struct dirent* entry)
     ? 1 : 0;
 }
 
-// Returns 1 if it is a robot location point cloud file
-int robotFileFilter(const struct dirent* entry)
-{
-  return (strncmp(entry->d_name, "path", 4) == 0 && pcdFileFilter(entry)) 
-    	  ? 1 : 0;
-}
-
 // Returns 1 if it is a laser point cloud file
 int laserFileFilter(const struct dirent* entry)
 {
-  return (pcdFileFilter(entry) && !robotFileFilter(entry)) 
+  return (pcdFileFilter(entry) &&
+          strncmp(entry->d_name, "path", 4) != 0) 
     	  ? 1 : 0;
 }
 
@@ -120,17 +114,24 @@ void getSubDirs(const std::string &sourceDir,
 }
 
 // load laser point cloud files from given directory
-void readLaserClouds(const std::string &dir, std::list<TSCloud *> &tsClouds)
+void readClouds(const std::string &dir,
+		     std::list<RobotInfo *> &robotInfos,
+    		     std::list<TSCloud *> &laserClouds)
 {
   struct dirent **namelist(NULL);
   int n(0);
 
-  // error scanning directory
-  if ((n = scandir(dir.c_str(), &namelist, laserFileFilter, NULL)) == -1) {
+  // load the robot cloud file
+  MyCloud robotCloud;
+  pcl::io::loadPCDFile(dir + "path.pcd", robotCloud);
+
+  // error scanning directory for laser cloud files
+  if ((n = scandir(dir.c_str(), &namelist, laserFileFilter, versionsort)) 
+      == -1) {
     error("Error scanning: " + dir, true);
     return;
   }
-  // empty directory
+  // no laser cloud files
   else if (n == 0) {
     error("No laser point clouds in: " + dir);
     return;
@@ -139,12 +140,21 @@ void readLaserClouds(const std::string &dir, std::list<TSCloud *> &tsClouds)
   // load and add point clouds to list
   for (int i = 0; i < n; i++) {
     MyCloud cloud;
+    int timeStamp = atoi(namelist[i]->d_name);
     pcl::io::loadPCDFile(dir + namelist[i]->d_name, cloud);
-    tsClouds.push_back(new TSCloud(cloud.makeShared(),
-	               atoi(namelist[i]->d_name)));
+    laserClouds.push_back(new TSCloud(cloud.makeShared(), timeStamp));
+    // also use the time stamp value to create a robot position info
+    // and add to robot path list
+    robotInfos.push_back(new RobotInfo(robotCloud[i], timeStamp, 0.0));
   }
 
   freeNameList(namelist, n);
+}
+
+// comparision function for the list of time stamped clouds
+bool compareRobotInfo(RobotInfo *t1, RobotInfo *t2)
+{
+  return t1->timeStamp <= t2->timeStamp;
 }
 
 // comparision function for the list of time stamped clouds
@@ -156,29 +166,32 @@ bool compareTSCloud(TSCloud *t1, TSCloud *t2)
 // Go through each subdirectory and read all the laser point clouds
 // into a single list.
 void readTimeStampClouds(const std::vector<std::string> &subDirs,
-    			 std::list<TSCloud *> &tsClouds)
+    		   	 std::list<RobotInfo *> &robotInfos,
+    			 std::list<TSCloud *> &laserClouds)
 {
   for (int i = 0; i < subDirs.size(); i++) {
-    readLaserClouds(subDirs[i], tsClouds);
+    readClouds(subDirs[i], robotInfos, laserClouds);
   }
 
 #ifdef DEBUG
   std::list<TSCloud *>::const_iterator it;
-  for (it = tsClouds.begin(); it != tsClouds.end(); it++)
+  for (it = laserClouds.begin(); it != laserClouds.end(); it++)
     std::cout << (*it)->getTimeStamp() << std::endl;
 
 #endif
 
   // now sort the list according to time stamp value
-  tsClouds.sort(compareTSCloud);
+  robotInfos.sort(compareRobotInfo);
+  laserClouds.sort(compareTSCloud);
 
 #ifdef DEBUG
   error("sorted version");
 
-  for (it = tsClouds.begin(); it != tsClouds.end(); it++)
+  for (it = laserClouds.begin(); it != laserClouds.end(); it++)
     std::cout << (*it)->getTimeStamp() << std::endl;
 #endif
 }
+
 
 
 

@@ -14,16 +14,16 @@
 class Demo {
 public:
   Demo(const std::string &title,
-    const std::list<TSCloud *> &laserClouds,
-    const MyCloud::Ptr &robotcloud);
+    const std::list<RobotInfo *> &robotInfos,
+    const std::list<TSCloud *> &laserClouds);
   void incrementIndex();
   void decrementIndex();
   void showCurrIndex();
 
 private:
   pcl::visualization::PCLVisualizer myViewer;
+  const std::list<RobotInfo *> &myRobotInfos;
   const std::list<TSCloud *> &myLaserClouds;
-  const MyCloud::Ptr &myRobotCloud;
   int currIndex;
 };
 

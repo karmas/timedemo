@@ -9,6 +9,7 @@
 typedef pcl::PointXYZRGB MyPoint;
 typedef pcl::PointCloud<MyPoint> MyCloud;
 
+// class for time stamped point cloud
 class TSCloud {
 public:
   TSCloud(MyCloud::Ptr cloud, int timeStamp);
@@ -23,6 +24,15 @@ private:
   TSCloud operator=(const TSCloud &);
 };
 
+// group robot position, heading and timestamp
+struct RobotInfo {
+  RobotInfo(const MyPoint pt, int ts, double h)
+    : point(pt), timeStamp(ts), th(h) { }
+  MyPoint point;
+  int timeStamp;
+  double th;	// heading in degrees
+};
+
 void errorExit(const std::string &msg, bool showExtraInfo = false);
 void checkSourceDir(int c, char* v[]);
 int pcdFileFilter(const struct dirent* entry);
@@ -31,6 +41,7 @@ void appendSlash(std::string &name);
 void getSubDirs(const std::string &sourceDir,
     		std::vector<std::string> &subDirs);
 void readTimeStampClouds(const std::vector<std::string> &subDirs,
-    			 std::list<TSCloud *> &tsClouds);
+    		   	 std::list<RobotInfo *> &robotInfos,
+    			 std::list<TSCloud *> &laserClouds);
 
 #endif
