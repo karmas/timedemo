@@ -6,24 +6,34 @@
 
 #include "fileUtils.h"
 
-// Check whether a directory name is given on the command line and whether
-// it exists.
-// Returns true if the directory exists.
-bool checkSourceDir(int c, char* v[])
+void error(const std::string &msg, bool showExtraInfo = false)
 {
-  // directory name not provided
-  if (c < 2)
-    return false;
+  std::cout << msg << std::endl;
+  if (showExtraInfo)
+    std::cout << strerror(errno) << std::endl;
+}
 
-  DIR *dir = opendir(v[1]);
-  // directory does not exist
-  if (!dir) {
-    std::cout << v[1] << " directory does not exist!!!" << std:: endl;
-    return false;
-  }
-  closedir(dir);
-  
-  return true;
+// exit with error message
+void errorExit(const std::string &msg, bool showExtraInfo)
+{
+  std::cout << msg << std::endl;
+  if (showExtraInfo)
+    std::cout << strerror(errno) << std::endl;
+  std::exit(1);
+}
+
+// free up the allocation by scandir()
+void freeNameList(struct dirent **namelist, int n)
+{
+  while (n--) free(namelist[n]);
+  free(namelist);
+}
+
+// return 0 if it is not a directory or one of the dots
+int dirFilter(const struct dirent *dir)
+{
+  if (strcmp(dir->d_name, ".") == 0 ||
+      strcmp(dir->d_name, "..") == 0) return 0;
 }
 
 // Returns 1 if name of the given entry matches the glob pattern.
@@ -35,6 +45,20 @@ int pcdFileFilter(const struct dirent* entry)
     ? 1 : 0;
 }
 
+// Returns 1 if it is a robot location point cloud file
+int robotFileFilter(const struct dirent* entry)
+{
+  return (strncmp(entry->d_name, "path", 4) == 0 && pcdFileFilter(entry)) 
+    	  ? 1 : 0;
+}
+
+// Returns 1 if it is a laser point cloud file
+int laserFileFilter(const struct dirent* entry)
+{
+  return (pcdFileFilter(entry) && !robotFileFilter(entry)) 
+    	  ? 1 : 0;
+}
+
 // needed for qsort function to compare 2 numbers
 int numCompare(const void *v1, const void *v2)
 {
@@ -42,6 +66,119 @@ int numCompare(const void *v1, const void *v2)
   int i2 = *(int *)v2;
   return i1 - i2;
 }
+
+
+
+
+// useful for appending '/' to strings to make directory name if it
+// is missing
+void appendSlash(std::string &name)
+{
+  // already has slash so it is fine
+  if (name[name.size()-1] == '/') return;
+  else name += "/";
+}
+
+// Check whether a directory name is given on the command line and whether
+// it exists.
+// Returns true if the directory exists.
+void checkSourceDir(int c, char* v[])
+{
+  // directory name not provided
+  if (c < 2)
+    errorExit("Please provide the point clouds source directory!!!");
+
+  // check given directory for existence
+  DIR *dir = opendir(v[1]);
+  if (!dir)
+    errorExit("Error with: " + std::string(v[1]), true);
+
+  // close the directory
+  closedir(dir);
+}
+
+// Goes in the given directory.
+// Remembers paths to all the subdirectories in it.
+void getSubDirs(const std::string &sourceDir,
+    		std::vector<std::string> &subDirs)
+{
+  struct dirent **namelist(NULL);
+  int n(0);
+
+  // error occurred while scanning into source directory
+  if ((n = scandir(sourceDir.c_str(), &namelist, dirFilter, versionsort)) 
+      == -1)
+    errorExit("Error scanning: " + sourceDir, true);
+  else if (n == 0)
+    errorExit("Empty: " + sourceDir);
+
+  // remember the subdirectory paths
+  for (int i = 0; i < n; i++) {
+    subDirs.push_back(sourceDir + namelist[i]->d_name + "/");
+  }
+
+  // free the namelist
+  freeNameList(namelist, n);
+}
+
+// load laser point cloud files from given directory
+void readLaserClouds(const std::string &dir, std::list<TSCloud *> &tsClouds)
+{
+  struct dirent **namelist(NULL);
+  int n(0);
+
+  // error scanning directory
+  if ((n = scandir(dir.c_str(), &namelist, laserFileFilter, NULL)) == -1) {
+    error("Error scanning: " + dir, true);
+    return;
+  }
+  // empty directory
+  else if (n == 0) {
+    error("No laser point clouds in: " + dir);
+    return;
+  }
+
+  // load and add point clouds to list
+  for (int i = 0; i < n; i++) {
+    MyCloud cloud;
+    pcl::io::loadPCDFile(dir + namelist[i]->d_name, cloud);
+    tsClouds.push_back(new TSCloud(cloud.makeShared(),
+	               atoi(namelist[i]->d_name)));
+  }
+
+  freeNameList(namelist, n);
+}
+
+// comparision function for the list of time stamped clouds
+bool compareTSCloud(TSCloud *t1, TSCloud *t2)
+{
+  return t1->getTimeStamp() <= t2->getTimeStamp();
+}
+
+// Go through each subdirectory and read all the laser point clouds
+// into a single list.
+void readTimeStampClouds(const std::vector<std::string> &subDirs,
+    			 std::list<TSCloud *> &tsClouds)
+{
+  for (int i = 0; i < subDirs.size(); i++) {
+    readLaserClouds(subDirs[i], tsClouds);
+  }
+
+  std::list<TSCloud *>::const_iterator it;
+  for (it = tsClouds.begin(); it != tsClouds.end(); it++)
+    std::cout << (*it)->getTimeStamp() << std::endl;
+
+  // now sort the list according to time stamp value
+  tsClouds.sort(compareTSCloud);
+
+  error("sorted version");
+
+  for (it = tsClouds.begin(); it != tsClouds.end(); it++)
+    std::cout << (*it)->getTimeStamp() << std::endl;
+}
+
+
+
 
 // The parameter unsortedList points to an array of files which are present
 // the directory. This function fills sortedFileNames vector so that the
@@ -140,9 +277,11 @@ void readCloudFiles(const std::string &sourceDir,
   }
 
   // free memory allocated by various routines
-  for (int j = 0; j < n; j++) {
-    free(namelist[j]);
-  }
-  free(namelist);
+  freeNameList(namelist, n);
 }
 
+
+TSCloud::TSCloud(MyCloud::Ptr cloud, int timeStamp)
+  : myCloud(cloud), myTimeStamp(timeStamp)
+{
+}

@@ -8,21 +8,27 @@
 int main(int argc, char* argv[])
 {
   // check whether a path containing the point cloud files is given
-  if (!checkSourceDir(argc, argv)) {
-    std::cout << "Please provide the source directory "
-      	      << "containing the point cloud files" << std::endl;
-    return 1;
-  }
+  checkSourceDir(argc, argv);
 
-  // directory exists so read the files into memory
+  // check for subdirectories and remember path names
   std::string sourceDir(argv[1]);
-  sourceDir += "/";
-  std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> laserClouds;
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr robotCloud;
-  readCloudFiles(sourceDir, laserClouds, robotCloud);
+  appendSlash(sourceDir);
+  std::vector<std::string> subDirs;
+  getSubDirs(sourceDir, subDirs);
+  /*
+  for (int i = 0; i < subDirs.size(); i++)
+    std::cout << subDirs[i] << std::endl;
+    */
+  
+  // get laser point clouds and store in time stamp order
+  std::list<TSCloud *> tsClouds;
+  readTimeStampClouds(subDirs, tsClouds);
+
+  /*
 
   // now display the demo
   Demo demo("TIME STAMP DEMO", laserClouds, robotCloud);
+  */
 
   return 0;
 }
