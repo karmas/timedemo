@@ -30,11 +30,6 @@ int numCompare(const void *v1, const void *v2);
 void appendSlash(std::string &name);
 void getSubDirs(const std::string &sourceDir,
     		std::vector<std::string> &subDirs);
-void getSortedFileNames(struct dirent **unsortedList, int n,
-    			std::vector<std::string> &sortedFileNames);
-void readCloudFiles(const std::string &sourceDir,
-    std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> &laserClouds,
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr &robotCloud);
 void readTimeStampClouds(const std::vector<std::string> &subDirs,
     			 std::list<TSCloud *> &tsClouds);
 

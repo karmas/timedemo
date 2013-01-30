@@ -5,8 +5,8 @@
 
 // initializes the viewer and shows the first time stamped cloud
 Demo::Demo(const std::string &title,
-  const std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> &laserClouds,
-  const pcl::PointCloud<pcl::PointXYZRGB>::Ptr &robotCloud)
+  const std::list<TSCloud *> &laserClouds,
+  const MyCloud::Ptr &robotCloud)
   : myViewer(title), 
     myLaserClouds(laserClouds),
     myRobotCloud(robotCloud),
@@ -41,14 +41,14 @@ void Demo::showCurrIndex()
 {
   myViewer.removeAllPointClouds();
 
-  std::cout << "showing time index: " << currIndex << std::endl;
-
-  myViewer.addPointCloud(myLaserClouds[currIndex], "laser");
+  std::list<TSCloud *>::const_iterator it = myLaserClouds.begin();
+  for (int i = 0; i < currIndex; i++) it++;
+  myViewer.addPointCloud((*it)->getCloud(), "laser");
+  std::cout << currIndex << ") " << (*it)->getTimeStamp() << std::endl;
 
   myViewer.removeShape("sphere");
-  myViewer.addSphere((*myRobotCloud)[currIndex], 10);
+  //myViewer.addSphere((*myRobotCloud)[currIndex], 10);
 }
-
 
 
 // handles keyboard events captured by the demo viewer

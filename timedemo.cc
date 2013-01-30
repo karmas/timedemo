@@ -15,20 +15,19 @@ int main(int argc, char* argv[])
   appendSlash(sourceDir);
   std::vector<std::string> subDirs;
   getSubDirs(sourceDir, subDirs);
-  /*
-  for (int i = 0; i < subDirs.size(); i++)
-    std::cout << subDirs[i] << std::endl;
-    */
   
-  // get laser point clouds and store in time stamp order
-  std::list<TSCloud *> tsClouds;
-  readTimeStampClouds(subDirs, tsClouds);
+  // get laser point clouds from subdirectories
+  std::list<TSCloud *> laserClouds;
+  readTimeStampClouds(subDirs, laserClouds);
 
-  /*
+  // get robot point clouds from subdirectories
+  MyCloud::Ptr robotCloud;
+
+  // transfer from list to vector
+
 
   // now display the demo
   Demo demo("TIME STAMP DEMO", laserClouds, robotCloud);
-  */
 
   return 0;
 }
