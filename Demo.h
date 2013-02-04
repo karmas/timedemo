@@ -19,12 +19,16 @@ public:
   void incrementIndex();
   void decrementIndex();
   void showCurrIndex();
+  void switchAggregateMode();
+  void displayControls();
+  void setCurrIndex(size_t n);
 
 private:
   pcl::visualization::PCLVisualizer myViewer;
   const std::list<RobotInfo *> &myRobotInfos;
   const std::list<TSCloud *> &myLaserClouds;
-  int currIndex;
+  int myCurrIndex;
+  bool myAggregateMode;
 };
 
 
