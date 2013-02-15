@@ -5,8 +5,8 @@
 
 // initializes the viewer and shows the first time stamped cloud
 Demo::Demo(const std::string &title,
-  const std::list<RobotInfo *> &robotInfos,
-  const std::list<TSCloud *> &laserClouds)
+  std::list<RobotInfo *> &robotInfos,
+  std::list<TSCloud *> &laserClouds)
   : myViewer(title), 
     myRobotInfos(robotInfos),
     myLaserClouds(laserClouds),
@@ -47,8 +47,9 @@ void Demo::showCurrIndex()
   std::ostringstream os;
 
   // find iterators to current robot position and laser point cloud
-  std::list<RobotInfo *>::const_iterator rit = myRobotInfos.begin();
-  std::list<TSCloud *>::const_iterator lit = myLaserClouds.begin();
+  std::list<RobotInfo *>::iterator rit = myRobotInfos.begin();
+  std::list<RobotInfo *>::iterator prev_rit = myRobotInfos.begin();
+  std::list<TSCloud *>::iterator lit = myLaserClouds.begin();
   for (int i = 0; i < myCurrIndex; i++) {
     if (myAggregateMode) {
       os.str("");
@@ -59,7 +60,13 @@ void Demo::showCurrIndex()
       myViewer.addPointCloud((*lit)->getCloud(), "laser" + os.str());
     }
     rit++; lit++;
+    if (i != 0) prev_rit++;
   }
+
+  // deghost laser positions near other robots by using the positions of
+  // those other robots from the previous time step
+  if (rit != myRobotInfos.begin())
+    markRegion((*prev_rit)->point, 200, (*lit)->getCloud());
 
   os.str("");
   os << myCurrIndex;
@@ -100,6 +107,30 @@ void Demo::displayControls()
 
 // set the index
 void Demo::setCurrIndex(size_t n) { myCurrIndex = n; }
+
+// check if the given pt is withing a sphere of center and radius by
+// calculating the distance between the two points
+static bool inRegion(const MyPoint &center, int radius,
+    		    const MyPoint &pt)
+{
+  return sqrt(pow(center.x - pt.x, 2) + 
+              pow(center.y - pt.y, 2) +
+	      pow(center.z - pt.z, 2)) < 350 ? true : false;
+}
+
+// mark all points in given cloud which is in the spherical region
+// with given center and radius
+void Demo::markRegion(const MyPoint &center, int radius,
+    		      MyCloud::Ptr cloud)
+{
+  for (size_t i = 0; i < cloud->size(); i++) {
+    if (inRegion(center, radius, (*cloud)[i])) {
+      (*cloud)[i].r = 0;
+      (*cloud)[i].g = 255;
+      (*cloud)[i].b = 0;
+    }
+  }
+}
 
 // handles keyboard events captured by the demo viewer
 void viewerKeyHandler(const pcl::visualization::KeyboardEvent &ke,

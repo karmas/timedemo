@@ -14,19 +14,21 @@
 class Demo {
 public:
   Demo(const std::string &title,
-    const std::list<RobotInfo *> &robotInfos,
-    const std::list<TSCloud *> &laserClouds);
+    std::list<RobotInfo *> &robotInfos,
+    std::list<TSCloud *> &laserClouds);
   void incrementIndex();
   void decrementIndex();
   void showCurrIndex();
   void switchAggregateMode();
   void displayControls();
   void setCurrIndex(size_t n);
+  void markRegion(const MyPoint &center, int radius,
+      		  MyCloud::Ptr cloud);
 
 private:
   pcl::visualization::PCLVisualizer myViewer;
-  const std::list<RobotInfo *> &myRobotInfos;
-  const std::list<TSCloud *> &myLaserClouds;
+  std::list<RobotInfo *> &myRobotInfos;
+  std::list<TSCloud *> &myLaserClouds;
   int myCurrIndex;
   bool myAggregateMode;
 };
