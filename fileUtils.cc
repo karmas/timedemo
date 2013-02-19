@@ -6,8 +6,6 @@
 
 #include "fileUtils.h"
 
-#define FIX
-
 void error(const std::string &msg, bool showExtraInfo = false)
 {
   std::cout << msg << std::endl;
@@ -115,37 +113,10 @@ void getSubDirs(const std::string &sourceDir,
   freeNameList(namelist, n);
 }
 
-static MyPoint downRobotFix(const MyPoint &pt)
-{
-  MyPoint newPt = pt;
-
-  float xFix = 265;
-  float zFix = 109;
-
-  newPt.x += xFix;
-  // y axis is the same for laser and robot so no need to fix y values
-  newPt.z += zFix;
-  return newPt;
-}
-
-static MyPoint upRobotFix(const MyPoint &pt)
-{
-  MyPoint newPt = pt;
-
-  float xFix = 252;
-  float zFix = 134;
-
-  newPt.x += xFix;
-  // y axis is the same for laser and robot so no need to fix y values
-  newPt.z += zFix;
-  return newPt;
-}
-
 // load laser point cloud files from given directory
 void readClouds(const std::string &dir,
 		     std::list<RobotInfo *> &robotInfos,
-    		     std::list<TSCloud *> &laserClouds,
-		     MyPoint (*robotPositionFix) (const MyPoint &pt))
+    		     std::list<TSCloud *> &laserClouds)
 {
   struct dirent **namelist(NULL);
   int n(0);
@@ -174,13 +145,7 @@ void readClouds(const std::string &dir,
     laserClouds.push_back(new TSCloud(cloud.makeShared(), timeStamp));
     // also use the time stamp value to create a robot position info
     // and add to robot path list
-#ifdef FIX
-    robotInfos.push_back(new RobotInfo(
-	  robotPositionFix(robotCloud[i]), 
-	  timeStamp, 0.0));
-#else
     robotInfos.push_back(new RobotInfo(robotCloud[i], timeStamp, 0.0));
-#endif
   }
 
   freeNameList(namelist, n);
@@ -205,10 +170,7 @@ void readTimeStampClouds(const std::vector<std::string> &subDirs,
     			 std::list<TSCloud *> &laserClouds)
 {
   for (int i = 0; i < subDirs.size(); i++) {
-    if (subDirs[i].find("bot110") != std::string::npos)
-      readClouds(subDirs[i], robotInfos, laserClouds, downRobotFix);
-    else if (subDirs[i].find("bot111") != std::string::npos)
-      readClouds(subDirs[i], robotInfos, laserClouds, upRobotFix);
+      readClouds(subDirs[i], robotInfos, laserClouds);
   }
 
 #ifdef DEBUG
