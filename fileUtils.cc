@@ -137,16 +137,22 @@ void readClouds(const std::string &dir,
     return;
   }
 
+  // get robot name from directory path
+  std::string robotName = pathToRobotName(dir);
+
   // load and add point clouds to list
   for (int i = 0; i < n; i++) {
     MyCloud cloud;
     int timeStamp = atoi(namelist[i]->d_name);
     pcl::io::loadPCDFile(dir + namelist[i]->d_name, cloud);
-    laserClouds.push_back(new TSCloud(cloud.makeShared(), timeStamp));
+    laserClouds.push_back(new TSCloud(
+	  cloud.makeShared(), timeStamp, robotName));
     // also use the time stamp value to create a robot position info
     // and add to robot path list
-    robotInfos.push_back(new RobotInfo(robotCloud[i], timeStamp, 0.0));
+    robotInfos.push_back(new RobotInfo(
+	  robotCloud[i], timeStamp, 0.0, robotName));
   }
+
 
   freeNameList(namelist, n);
 }
@@ -192,10 +198,28 @@ void readTimeStampClouds(const std::vector<std::string> &subDirs,
 #endif
 }
 
+// extract robot name from file path
+std::string pathToRobotName(const std::string &dir)
+{
+  int startIndex = dir.rfind('/');
+  int stopIndex = dir.length() - 1;
+
+  if (startIndex == stopIndex) {
+    startIndex = dir.rfind('/', stopIndex-1);
+  }
+
+  startIndex++; // skip the '/' character
+#ifdef DEBUG
+  std::cout << "robot name: " <<
+    << dir.substr(startIndex, stopIndex - startIndex) 
+    << std::endl;
+#endif
+  return dir.substr(startIndex, stopIndex - startIndex);
+}
 
 
-
-TSCloud::TSCloud(MyCloud::Ptr cloud, int timeStamp)
-  : myCloud(cloud), myTimeStamp(timeStamp)
+TSCloud::TSCloud(MyCloud::Ptr cloud, int timeStamp,
+    const std::string &robotName)
+  : myCloud(cloud), myTimeStamp(timeStamp), myRobotName(robotName)
 {
 }

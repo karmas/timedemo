@@ -75,7 +75,9 @@ void Demo::showCurrIndex()
 		     (*rit)->point.r, (*rit)->point.g, (*rit)->point.b,
 		     "robot" + os.str());
   myViewer.addPointCloud((*lit)->getCloud(), "laser" + os.str());
+
   std::cout << myCurrIndex << ") " << (*rit)->timeStamp << std::endl;
+  std::cout << myCurrIndex << ") " << (*rit)->robotName << std::endl;
   //std::cout << myCurrIndex << ") " << (*lit)->getTimeStamp() << std::endl;
 }
 
