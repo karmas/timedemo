@@ -14,23 +14,26 @@
 class Demo {
 public:
   Demo(const std::string &title,
-    std::list<RobotInfo *> &robotInfos,
-    std::list<TSCloud *> &laserClouds);
+    std::vector<RobotInfo *> &robotInfos,
+    std::vector<TSCloud *> &laserClouds);
   void incrementIndex();
   void decrementIndex();
   void showCurrIndex();
   void switchAggregateMode();
   void displayControls();
-  void setCurrIndex(size_t n);
-  void markRegion(const MyPoint &center, int radius,
-      		  MyCloud::Ptr cloud);
+  void resetIndex();
+  void printCurrIndexInfo();
 
 private:
   pcl::visualization::PCLVisualizer myViewer;
-  std::list<RobotInfo *> &myRobotInfos;
-  std::list<TSCloud *> &myLaserClouds;
+  std::vector<RobotInfo *> &myRobotInfos;
+  std::vector<TSCloud *> &myLaserClouds;
   int myCurrIndex;
+  std::string myPrevRobotName;
   bool myAggregateMode;
+  int myRobotRadius; // in mm
+
+  void markOtherRobot();
 };
 
 
