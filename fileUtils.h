@@ -13,14 +13,13 @@ typedef pcl::PointCloud<MyPoint> MyCloud;
 class TSCloud {
 public:
   TSCloud(MyCloud::Ptr cloud, int timeStamp,
-      const std::string &robotName);
+      int index);
   MyCloud::Ptr getCloud() { return myCloud; }
   int getTimeStamp() { return myTimeStamp; }
-  std::string getRobotName() { return myRobotName; }
 private:
   MyCloud::Ptr myCloud;
   int myTimeStamp;
-  std::string myRobotName;
+  int myRobotTypeIndex;
 
   // disable copying
   TSCloud(const TSCloud &);
@@ -29,12 +28,20 @@ private:
 
 // group robot position, heading and timestamp
 struct RobotInfo {
-  RobotInfo(const MyPoint pt, int ts, double h, const std::string &name)
-    : point(pt), timeStamp(ts), th(h), robotName(name) { }
+  RobotInfo(const MyPoint pt, int ts, double h, int index)
+    : point(pt), timeStamp(ts), th(h), robotTypeIndex(index) { }
   MyPoint point;
   int timeStamp;
   double th;	// heading in degrees
+  int robotTypeIndex;
+};
+
+// group type information of robot
+struct RobotType {
+  RobotType(const std::string &name, const MyPoint &color) 
+    : robotName(name), regionColor(color) {}
   std::string robotName;
+  MyPoint regionColor;
 };
 
 void errorExit(const std::string &msg, bool showExtraInfo = false);
@@ -48,5 +55,7 @@ void readTimeStampClouds(const std::vector<std::string> &subDirs,
     		   	 std::list<RobotInfo *> &robotInfos,
     			 std::list<TSCloud *> &laserClouds);
 std::string pathToRobotName(const std::string &dir);
+void createRobotTypes(std::vector<std::string> &subDirs, 
+    		      std::vector<RobotType *> &robotTypes);
 
 #endif

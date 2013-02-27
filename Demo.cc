@@ -34,8 +34,8 @@ Demo::Demo(const std::string &title,
 void Demo::findPrevRobotIndex()
 {
   int i = myCurrIndex - 1;
-  while (i >= 0 && myRobotInfos[i]->robotName == 
-      		  myRobotInfos[myCurrIndex]->robotName) {
+  while (i >= 0 && myRobotInfos[i]->robotTypeIndex == 
+      		  myRobotInfos[myCurrIndex]->robotTypeIndex) {
     i--;
   }
 
@@ -133,7 +133,7 @@ void Demo::printCurrIndexInfo()
 {
   std::cout << "index = " << myCurrIndex << " | "
     << "timestamp = " << myRobotInfos[myCurrIndex]->timeStamp << " ms | "
-    << "name = " << myRobotInfos[myCurrIndex]->robotName << " | "
+    << "name = " << myRobotInfos[myCurrIndex]->robotTypeIndex << " | "
     << "prev = " << myPrevRobotIndex
     << std::endl;
 }

@@ -21,12 +21,16 @@ int main(int argc, char* argv[])
   appendSlash(sourceDir);
   std::vector<std::string> subDirs;
   getSubDirs(sourceDir, subDirs);
+
+  std::vector<RobotType *> robotTypes;
+  createRobotTypes(subDirs, robotTypes);
   
   // get laser point clouds from subdirectories
   // and points from robot point clouds
   std::list<TSCloud *> laserClouds;
   std::list<RobotInfo *> robotInfos;
   readTimeStampClouds(subDirs, robotInfos, laserClouds);
+
 
   // convert the lists to vectors for faster access operations
   std::vector<TSCloud *> laserCloudsVector;

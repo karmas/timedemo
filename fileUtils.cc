@@ -115,8 +115,9 @@ void getSubDirs(const std::string &sourceDir,
 
 // load laser point cloud files from given directory
 void readClouds(const std::string &dir,
-		     std::list<RobotInfo *> &robotInfos,
-    		     std::list<TSCloud *> &laserClouds)
+    		int robotTypeIndex,
+		std::list<RobotInfo *> &robotInfos,
+		std::list<TSCloud *> &laserClouds)
 {
   struct dirent **namelist(NULL);
   int n(0);
@@ -146,11 +147,11 @@ void readClouds(const std::string &dir,
     int timeStamp = atoi(namelist[i]->d_name);
     pcl::io::loadPCDFile(dir + namelist[i]->d_name, cloud);
     laserClouds.push_back(new TSCloud(
-	  cloud.makeShared(), timeStamp, robotName));
+	  cloud.makeShared(), timeStamp, robotTypeIndex));
     // also use the time stamp value to create a robot position info
     // and add to robot path list
     robotInfos.push_back(new RobotInfo(
-	  robotCloud[i], timeStamp, 0.0, robotName));
+	  robotCloud[i], timeStamp, 0.0, robotTypeIndex));
   }
 
 
@@ -176,7 +177,7 @@ void readTimeStampClouds(const std::vector<std::string> &subDirs,
     			 std::list<TSCloud *> &laserClouds)
 {
   for (int i = 0; i < subDirs.size(); i++) {
-      readClouds(subDirs[i], robotInfos, laserClouds);
+      readClouds(subDirs[i], i, robotInfos, laserClouds);
   }
 
 #ifdef DEBUG
@@ -217,9 +218,29 @@ std::string pathToRobotName(const std::string &dir)
   return dir.substr(startIndex, stopIndex - startIndex);
 }
 
+// create a list of robot types which hold information such
+// as name and region color for the robot
+void createRobotTypes(std::vector<std::string> &subDirs, 
+    		      std::vector<RobotType *> &robotTypes)
+{
+  MyPoint regionColors[2];
+  regionColors[0].r = 0;
+  regionColors[0].g = 200;
+  regionColors[0].b = 0;
+  regionColors[1].r = 200;
+  regionColors[1].g = 200;
+  regionColors[1].b = 0;
 
-TSCloud::TSCloud(MyCloud::Ptr cloud, int timeStamp,
-    const std::string &robotName)
-  : myCloud(cloud), myTimeStamp(timeStamp), myRobotName(robotName)
+  for (size_t i = 0; i < subDirs.size(); i++) {
+    robotTypes.push_back(
+	new RobotType(pathToRobotName(subDirs[i]), regionColors[i])
+    );
+  }
+}
+
+
+
+TSCloud::TSCloud(MyCloud::Ptr cloud, int timeStamp, int index)
+  : myCloud(cloud), myTimeStamp(timeStamp), myRobotTypeIndex(index)
 {
 }
