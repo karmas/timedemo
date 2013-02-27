@@ -3,6 +3,8 @@
 #include "Demo.h"
 
 
+const int Demo::INVALID = -99;
+
 // initializes the viewer and shows the first time stamped cloud
 Demo::Demo(const std::string &title,
   std::vector<RobotInfo *> &robotInfos,
@@ -11,7 +13,7 @@ Demo::Demo(const std::string &title,
     myRobotInfos(robotInfos),
     myLaserClouds(laserClouds),
     myCurrIndex(0),
-    myPrevRobotName(""),
+    myPrevRobotIndex(INVALID),
     myAggregateMode(false),
     myRobotRadius(200)
 {
@@ -27,18 +29,32 @@ Demo::Demo(const std::string &title,
   myViewer.spin();
 }
 
+// find the index which represents the other robot that occurs
+// right before the current robot
+void Demo::findPrevRobotIndex()
+{
+  int i = myCurrIndex - 1;
+  while (i >= 0 && myRobotInfos[i]->robotName == 
+      		  myRobotInfos[myCurrIndex]->robotName) {
+    i--;
+  }
+
+  if (i < 0) myPrevRobotIndex = INVALID;
+  else myPrevRobotIndex = i;
+}
+
 void Demo::incrementIndex()
 {
-  myPrevRobotName = myRobotInfos[myCurrIndex]->robotName;
   myCurrIndex++;
   if (myCurrIndex >= myLaserClouds.size()) myCurrIndex = 0;
+  findPrevRobotIndex();
 }
 
 void Demo::decrementIndex()
 {
-  myPrevRobotName = myRobotInfos[myCurrIndex]->robotName;
   myCurrIndex--;
   if (myCurrIndex < 0) myCurrIndex = myLaserClouds.size() - 1;
+  findPrevRobotIndex();
 }
 
 void Demo::showCurrIndex()
@@ -98,7 +114,7 @@ void Demo::displayControls()
 void Demo::resetIndex() 
 { 
   myCurrIndex = 0; 
-  myPrevRobotName = ""; 
+  findPrevRobotIndex();
 }
 
 // check if the given pt is withing a sphere of center and radius by
@@ -118,7 +134,7 @@ void Demo::printCurrIndexInfo()
   std::cout << "index = " << myCurrIndex << " | "
     << "timestamp = " << myRobotInfos[myCurrIndex]->timeStamp << " ms | "
     << "name = " << myRobotInfos[myCurrIndex]->robotName << " | "
-    << "prev = " << myPrevRobotName 
+    << "prev = " << myPrevRobotIndex
     << std::endl;
 }
 

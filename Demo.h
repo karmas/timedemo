@@ -24,15 +24,18 @@ public:
   void resetIndex();
   void printCurrIndexInfo();
 
+  static const int INVALID;
+
 private:
   pcl::visualization::PCLVisualizer myViewer;
   std::vector<RobotInfo *> &myRobotInfos;
   std::vector<TSCloud *> &myLaserClouds;
   int myCurrIndex;
-  std::string myPrevRobotName;
+  int myPrevRobotIndex;	// previous robot in time stamp order
   bool myAggregateMode;
   int myRobotRadius; // in mm
 
+  void findPrevRobotIndex();
   void markOtherRobot();
 };
 
