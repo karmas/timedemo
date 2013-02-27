@@ -14,6 +14,7 @@
 class Demo {
 public:
   Demo(const std::string &title,
+    std::vector<RobotType *> &robotTypes,
     std::vector<RobotInfo *> &robotInfos,
     std::vector<TSCloud *> &laserClouds);
   void incrementIndex();
@@ -21,6 +22,7 @@ public:
   void showCurrIndex();
   void switchAggregateMode();
   void displayControls();
+  void printColorInfo();
   void resetIndex();
   void printCurrIndexInfo();
 
@@ -28,6 +30,7 @@ public:
 
 private:
   pcl::visualization::PCLVisualizer myViewer;
+  std::vector<RobotType *> &myRobotTypes;
   std::vector<RobotInfo *> &myRobotInfos;
   std::vector<TSCloud *> &myLaserClouds;
   int myCurrIndex;
@@ -37,6 +40,8 @@ private:
 
   void findPrevRobotIndex();
   void markOtherRobot();
+  void printTitle(const std::string &title);
+  int longestLen(std::string array[], int n);
 };
 
 

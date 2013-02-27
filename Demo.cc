@@ -7,9 +7,11 @@ const int Demo::INVALID = -99;
 
 // initializes the viewer and shows the first time stamped cloud
 Demo::Demo(const std::string &title,
+  std::vector<RobotType *> &robotTypes,
   std::vector<RobotInfo *> &robotInfos,
   std::vector<TSCloud *> &laserClouds)
   : myViewer(title), 
+    myRobotTypes(robotTypes),
     myRobotInfos(robotInfos),
     myLaserClouds(laserClouds),
     myCurrIndex(0),
@@ -22,9 +24,11 @@ Demo::Demo(const std::string &title,
   myViewer.addCoordinateSystem(170.0);
   myViewer.initCameraParameters();
 
+  printColorInfo();
   displayControls();
 
   myViewer.registerKeyboardCallback(viewerKeyHandler, (void *)this);
+  printTitle("Current Display information");
   showCurrIndex();
   myViewer.spin();
 }
@@ -96,18 +100,34 @@ void Demo::switchAggregateMode()
 // show the keyboard buttons and what they do
 void Demo::displayControls()
 {
-  const size_t keyColSpace = 20;
-  std::cout << std::setw(keyColSpace) << std::left << "KEY" 
-    << "FUNCTION" << std::endl;
-  std::cout << std::setw(keyColSpace) << "Left arrow key" 
-    << "Show older cloud" << std::endl;
-  std::cout << std::setw(keyColSpace) << "Rigth arrow key" 
-    << "Show newer cloud" << std::endl;
-  std::cout << std::setw(keyColSpace) << "'A' key" 
-    << "Alternate between aggregate and single cloud mode" << std::endl;
-  std::cout << std::setw(keyColSpace) << "'S' key" 
-    << "Start over" << std::endl;
-  std::cout << std::endl;
+  printTitle("Keyboard Controls");
+  std::string keys[] = {
+    "LEFT arrow",
+    "RIGHT arrow",
+    "A",
+    "S"
+  };
+  std::string keysDesc[] = {
+    "Show older cloud",
+    "Show newer cloud",
+    "Alternate aggregate and single mode",
+    "Start over"
+  };
+
+  const int rows = sizeof(keys)/sizeof(keys[0]);
+  const int padding = 2;
+  const int keysColWidth = longestLen(keys, rows);
+  const int keysDescColWidth = longestLen(keysDesc, rows);
+  const char colSeparator = '|';
+
+  for (int i = 0; i < rows; i++) {
+    std::cout << std::setw(padding) << ""
+      << std::setw(keysColWidth) << keys[i]
+      << std::setw(padding) << "" << colSeparator
+      << std::setw(padding) << ""
+      << std::setw(keysDescColWidth) << keysDesc[i]
+      << std::endl;
+  }
 }
 
 // set the index
@@ -133,7 +153,9 @@ void Demo::printCurrIndexInfo()
 {
   std::cout << "index = " << myCurrIndex << " | "
     << "timestamp = " << myRobotInfos[myCurrIndex]->timeStamp << " ms | "
-    << "name = " << myRobotInfos[myCurrIndex]->robotTypeIndex << " | "
+    << "name = " 
+    << myRobotTypes[myRobotInfos[myCurrIndex]->robotTypeIndex]->robotName
+    << " | "
     << "prev = " << myPrevRobotIndex
     << std::endl;
 }
@@ -145,18 +167,90 @@ void Demo::markOtherRobot()
 
   MyCloud::Ptr currLaserCloud = myLaserClouds[myCurrIndex]->getCloud();
   RobotInfo *prevRobotInfo = myRobotInfos[myPrevRobotIndex];
+  RobotType *prevRobotType = myRobotTypes[prevRobotInfo->robotTypeIndex];
 
   for (size_t i = 0; i < currLaserCloud->size(); i++) {
     if (inRegion(prevRobotInfo->point, myRobotRadius, 
 	  (*currLaserCloud)[i])) {
-      (*currLaserCloud)[i].r = 0;
-      (*currLaserCloud)[i].g = 100;
-      (*currLaserCloud)[i].b = 0;
+      (*currLaserCloud)[i].r = prevRobotType->regionColor.r;
+      (*currLaserCloud)[i].g = prevRobotType->regionColor.g;
+      (*currLaserCloud)[i].b = prevRobotType->regionColor.b;
     }
   }
 
 }
 
+// print out some information on the various colors in the point cloud
+void Demo::printColorInfo()
+{
+  printTitle("Meaning of Point colors (maybe invalid)");
+  const char colSeparator = '|';
+  const int padding = 2;
+  const int nInfo = 3;
+
+  // create information arrays
+  std::string infoType[nInfo] = {
+    " laser",
+    " center",
+    " region"
+  };
+  const int rows = myRobotTypes.size() * nInfo;
+  std::string colorFor[rows];
+  // this should eventually be made dynamic
+  std::string colorName[6] = {
+    " brown",
+    " red",
+    " green",
+    " lightblue",
+    " darkblue",
+    " yellow"
+  };
+  int k;
+
+  for (size_t i = 0; i < myRobotTypes.size(); i++) {
+    for (size_t j = 0; j < nInfo; j++) {
+      k = i*nInfo + j; 
+      colorFor[k] = myRobotTypes[i]->robotName + infoType[j];
+    }
+  }
+
+  const int descColWidth = longestLen(colorFor, rows);
+  const int colorColWidth = longestLen(colorName, rows);
+
+  for (size_t i = 0; i < myRobotTypes.size() * nInfo; i++) {
+    std::cout << std::setw(padding) << ""
+      << std::setw(descColWidth) << colorFor[i]
+      << std::setw(padding) << ""
+      << colSeparator
+      << std::setw(padding) << ""
+      << std::setw(colorColWidth) << colorName[i] << std::endl;
+  }
+}
+
+// print a section title
+void Demo::printTitle(const std::string &title)
+{
+  static const int leftMargin = 8;
+  const std::string horizontalBar = std::string(title.length(), '-');
+
+  std::cout << std::setw(leftMargin) << ""
+    << horizontalBar << std::endl
+    << std::setw(leftMargin) << ""
+    << title << std::endl 
+    << std::setw(leftMargin) << ""
+    << horizontalBar << std::endl;
+}
+
+// return the length of the longest string
+int Demo::longestLen(std::string array[], int n)
+{
+  int maxVal = array[0].length();
+  for (int i = 1; i < n; i++) {
+    if (array[i].length() > maxVal)
+      maxVal = array[i].length();
+  }
+  return maxVal;
+}
 
 
 // handles keyboard events captured by the demo viewer

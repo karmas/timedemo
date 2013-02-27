@@ -39,7 +39,8 @@ int main(int argc, char* argv[])
   list2vector<RobotInfo *>(robotInfos, robotInfosVector);
 
   // now display the demo
-  Demo demo("TIME STAMP DEMO", robotInfosVector, laserCloudsVector);
+  Demo demo("TIME STAMP DEMO", robotTypes,
+            robotInfosVector, laserCloudsVector);
 
   return 0;
 }
