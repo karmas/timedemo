@@ -26,6 +26,7 @@ Demo::Demo(const std::string &title,
 
   printColorInfo();
   displayControls();
+  colorClouds();
 
   myViewer.registerKeyboardCallback(viewerKeyHandler, (void *)this);
   printTitle("Current Display information");
@@ -35,36 +36,36 @@ Demo::Demo(const std::string &title,
 
 // find the index which represents the other robot that occurs
 // right before the current robot
-void Demo::findPrevRobotIndex()
+int Demo::findPrevRobotIndex(const int currIndex)
 {
-  int i = myCurrIndex - 1;
+  int i = currIndex - 1;
   while (i >= 0 && myRobotInfos[i]->robotTypeIndex == 
-      		  myRobotInfos[myCurrIndex]->robotTypeIndex) {
+      		  myRobotInfos[currIndex]->robotTypeIndex) {
     i--;
   }
 
-  if (i < 0) myPrevRobotIndex = INVALID;
-  else myPrevRobotIndex = i;
+  if (i < 0) return INVALID;
+  else return i;
 }
 
 void Demo::incrementIndex()
 {
   myCurrIndex++;
   if (myCurrIndex >= myLaserClouds.size()) myCurrIndex = 0;
-  findPrevRobotIndex();
+  myPrevRobotIndex = findPrevRobotIndex(myCurrIndex);
 }
 
 void Demo::decrementIndex()
 {
   myCurrIndex--;
   if (myCurrIndex < 0) myCurrIndex = myLaserClouds.size() - 1;
-  findPrevRobotIndex();
+  myPrevRobotIndex = findPrevRobotIndex(myCurrIndex);
 }
 
 void Demo::showCurrIndex()
 {
   RobotInfo *currRobotInfo = myRobotInfos[myCurrIndex];
-  TSCloud *currLaserCloud = myLaserClouds[myCurrIndex];
+  MyCloud::Ptr currLaserCloud = myColorClouds[myCurrIndex];
 
   // remove previous robot position
   myViewer.removeAllShapes();
@@ -75,16 +76,13 @@ void Demo::showCurrIndex()
   os.str("");
   os << myCurrIndex;
 
-  markOtherRobot();
-  
   // display the robot location as a sphere of same color
   myViewer.addSphere(currRobotInfo->point, 10.0,
 		     currRobotInfo->point.r, 
 		     currRobotInfo->point.g, 
 		     currRobotInfo->point.b,
 		     "robot" + os.str());
-  myViewer.addPointCloud(currLaserCloud->getCloud(),
-      			 "laser" + os.str());
+  myViewer.addPointCloud(currLaserCloud, "laser" + os.str());
   printCurrIndexInfo();
 }
 
@@ -93,6 +91,9 @@ void Demo::switchAggregateMode()
 {
   if (!myAggregateMode)
     std::cout << "Aggregate mode displays all clouds from first time stamp"
+      << std::endl;
+  else
+    std::cout << "Single cloud mode displays only current time stamp"
       << std::endl;
   myAggregateMode = !myAggregateMode;
 }
@@ -134,7 +135,7 @@ void Demo::displayControls()
 void Demo::resetIndex() 
 { 
   myCurrIndex = 0; 
-  findPrevRobotIndex();
+  myPrevRobotIndex = findPrevRobotIndex(myCurrIndex);
 }
 
 // check if the given pt is withing a sphere of center and radius by
@@ -160,13 +161,14 @@ void Demo::printCurrIndexInfo()
     << std::endl;
 }
 
-// color the points that are in the vicinity of other robots
-void Demo::markOtherRobot()
+// color the current laser scan points that occur in the vicinity
+// of the previous robot
+void Demo::markPrevRobot(const int prevRobotIndex,
+    			 MyCloud::Ptr currLaserCloud)
 {
-  if (myPrevRobotIndex == INVALID) return;
+  if (prevRobotIndex == INVALID) return;
 
-  MyCloud::Ptr currLaserCloud = myLaserClouds[myCurrIndex]->getCloud();
-  RobotInfo *prevRobotInfo = myRobotInfos[myPrevRobotIndex];
+  RobotInfo *prevRobotInfo = myRobotInfos[prevRobotIndex];
   RobotType *prevRobotType = myRobotTypes[prevRobotInfo->robotTypeIndex];
 
   for (size_t i = 0; i < currLaserCloud->size(); i++) {
@@ -250,6 +252,28 @@ int Demo::longestLen(std::string array[], int n)
       maxVal = array[i].length();
   }
   return maxVal;
+}
+
+// create a copy of the laser clouds but color them
+// with locations of other robot
+void Demo::colorClouds()
+{
+  std::cout << "coloring clouds please wait!!!" << std::endl;
+
+  MyCloud::Ptr currLaserCloud;
+  int prevRobotIndex;
+
+  for (size_t i = 0; i < myLaserClouds.size(); i++) {
+    // first create a copy of the original cloud
+    myColorClouds.push_back(myLaserClouds[i]->getCloud()->makeShared());
+
+    // get current cloud and previous robot
+    currLaserCloud = myColorClouds[i];
+    prevRobotIndex = findPrevRobotIndex(i);
+
+    // now mark the previous robot in current cloud
+    markPrevRobot(prevRobotIndex, currLaserCloud);
+  }
 }
 
 

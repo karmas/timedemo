@@ -33,15 +33,18 @@ private:
   std::vector<RobotType *> &myRobotTypes;
   std::vector<RobotInfo *> &myRobotInfos;
   std::vector<TSCloud *> &myLaserClouds;
+  std::vector<MyCloud::Ptr> myColorClouds;
   int myCurrIndex;
   int myPrevRobotIndex;	// previous robot in time stamp order
   bool myAggregateMode;
   int myRobotRadius; // in mm
 
-  void findPrevRobotIndex();
-  void markOtherRobot();
+  int findPrevRobotIndex(const int currIndex);
+  void markPrevRobot(const int prevRobotIndex, 
+      		     MyCloud::Ptr currLaserCloud);
   void printTitle(const std::string &title);
   int longestLen(std::string array[], int n);
+  void colorClouds();
 };
 
 
