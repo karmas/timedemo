@@ -66,13 +66,32 @@ void Demo::showCurrIndex()
 {
   RobotInfo *currRobotInfo = myRobotInfos[myCurrIndex];
   MyCloud::Ptr currLaserCloud = myColorClouds[myCurrIndex];
+  std::ostringstream os;
 
   // remove previous robot position
   myViewer.removeAllShapes();
   // remove previous cloud
   myViewer.removeAllPointClouds();
 
-  std::ostringstream os;
+  // just add all information from beginning to one before current time
+  if (myAggregateMode) {
+    RobotInfo *robotInfo;
+    MyCloud::Ptr laserCloud;
+
+    for (int i = 0; i < myCurrIndex - 1; i++) {
+      os.str("");
+      os << i;
+      robotInfo = myRobotInfos[i];
+      currLaserCloud = myColorClouds[i];
+      myViewer.addSphere(robotInfo->point, 10.0,
+	  		 robotInfo->point.r, 
+	  		 robotInfo->point.g, 
+	  		 robotInfo->point.b,
+	  		 "robot" + os.str());
+      myViewer.addPointCloud(currLaserCloud, "laser" + os.str());
+    }
+  }
+
   os.str("");
   os << myCurrIndex;
 
