@@ -141,12 +141,10 @@ void Demo::printCurrIndexInfo()
 // color the points that are in the vicinity of other robots
 void Demo::markOtherRobot()
 {
-  if (myCurrIndex == 0) return;
+  if (myPrevRobotIndex == INVALID) return;
 
   MyCloud::Ptr currLaserCloud = myLaserClouds[myCurrIndex]->getCloud();
-
-  // get previous robot which may not be the previous index
-  RobotInfo *prevRobotInfo = myRobotInfos[myCurrIndex - 1];
+  RobotInfo *prevRobotInfo = myRobotInfos[myPrevRobotIndex];
 
   for (size_t i = 0; i < currLaserCloud->size(); i++) {
     if (inRegion(prevRobotInfo->point, myRobotRadius, 
