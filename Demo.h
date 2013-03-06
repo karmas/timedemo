@@ -17,14 +17,12 @@ public:
     std::vector<RobotType *> &robotTypes,
     std::vector<RobotInfo *> &robotInfos,
     std::vector<TSCloud *> &laserClouds);
-  void incrementIndex();
-  void decrementIndex();
-  void showCurrIndex();
   void switchAggregateMode();
   void displayControls();
   void printColorInfo();
-  void resetIndex();
-  void printCurrIndexInfo();
+  void showNext();
+  void showPrevious();
+  void showReset();
 
   static const int INVALID;
 
@@ -45,6 +43,14 @@ private:
   void printTitle(const std::string &title);
   int longestLen(std::string array[], int n);
   void colorClouds();
+
+  void incrementIndex();
+  void decrementIndex();
+  void showCurrIndex();
+  void resetIndex();
+  void printCurrIndexInfo();
+  void clearDisplay();
+  void aggregateToIndex(int toIndex);
 };
 
 

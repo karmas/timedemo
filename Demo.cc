@@ -62,35 +62,19 @@ void Demo::decrementIndex()
   myPrevRobotIndex = findPrevRobotIndex(myCurrIndex);
 }
 
+void Demo::clearDisplay()
+{
+  // remove previous robot position
+  myViewer.removeAllShapes();
+  // remove previous cloud
+  myViewer.removeAllPointClouds();
+}
+
 void Demo::showCurrIndex()
 {
   RobotInfo *currRobotInfo = myRobotInfos[myCurrIndex];
   MyCloud::Ptr currLaserCloud = myColorClouds[myCurrIndex];
   std::ostringstream os;
-
-  // remove previous robot position
-  myViewer.removeAllShapes();
-  // remove previous cloud
-  myViewer.removeAllPointClouds();
-
-  // just add all information from beginning to one before current time
-  if (myAggregateMode) {
-    RobotInfo *robotInfo;
-    MyCloud::Ptr laserCloud;
-
-    for (int i = 0; i < myCurrIndex - 1; i++) {
-      os.str("");
-      os << i;
-      robotInfo = myRobotInfos[i];
-      currLaserCloud = myColorClouds[i];
-      myViewer.addSphere(robotInfo->point, 10.0,
-	  		 robotInfo->point.r, 
-	  		 robotInfo->point.g, 
-	  		 robotInfo->point.b,
-	  		 "robot" + os.str());
-      myViewer.addPointCloud(currLaserCloud, "laser" + os.str());
-    }
-  }
 
   os.str("");
   os << myCurrIndex;
@@ -108,12 +92,17 @@ void Demo::showCurrIndex()
 // switch aggregate mode on and off
 void Demo::switchAggregateMode()
 {
-  if (!myAggregateMode)
+  if (!myAggregateMode) {
+    aggregateToIndex(myCurrIndex - 1);
     std::cout << "Aggregate mode displays all clouds from first time stamp"
       << std::endl;
-  else
+  }
+  else {
+    clearDisplay();
+    showCurrIndex();
     std::cout << "Single cloud mode displays only current time stamp"
       << std::endl;
+  }
   myAggregateMode = !myAggregateMode;
 }
 
@@ -295,6 +284,55 @@ void Demo::colorClouds()
   }
 }
 
+// Display point clouds from index 0 to given index
+void Demo::aggregateToIndex(int toIndex)
+{  
+  std::ostringstream os;
+  RobotInfo *robotInfo;
+  MyCloud::Ptr currLaserCloud;
+
+  for (int i = 0; i <= toIndex; i++) {
+    os.str("");
+    os << i;
+    robotInfo = myRobotInfos[i];
+    currLaserCloud = myColorClouds[i];
+    myViewer.addSphere(robotInfo->point, 10.0,
+	robotInfo->point.r, 
+	robotInfo->point.g, 
+	robotInfo->point.b,
+	"robot" + os.str());
+    myViewer.addPointCloud(currLaserCloud, "laser" + os.str());
+  }
+}
+
+// Do this when next key is pressed
+void Demo::showNext()
+{
+  incrementIndex();
+  if (!myAggregateMode) clearDisplay();
+  else {
+    if (myCurrIndex == 0) clearDisplay();
+  }
+  showCurrIndex();
+}
+
+// Do this when previous key is pressed
+void Demo::showPrevious()
+{
+  decrementIndex();
+  clearDisplay();
+  if (myAggregateMode) aggregateToIndex(myCurrIndex - 1);
+  showCurrIndex();
+}
+
+// Do this when reset key is pressed
+void Demo::showReset()
+{
+  clearDisplay();
+  resetIndex();
+  showCurrIndex();
+}
+
 
 // handles keyboard events captured by the demo viewer
 void viewerKeyHandler(const pcl::visualization::KeyboardEvent &ke,
@@ -303,19 +341,16 @@ void viewerKeyHandler(const pcl::visualization::KeyboardEvent &ke,
   Demo *demo = static_cast<Demo *>(cookie);
 
   if (ke.getKeySym() == "Right" && ke.keyDown()) {
-    demo->incrementIndex();
-    demo->showCurrIndex();
+    demo->showNext();
   }
   else if (ke.getKeySym() == "Left" && ke.keyDown()) {
-    demo->decrementIndex();
-    demo->showCurrIndex();
+    demo->showPrevious();
   }
   else if (ke.getKeySym() == "a" && ke.keyDown()) {
     demo->switchAggregateMode();
   }
   else if (ke.getKeySym() == "s" && ke.keyDown()) {
-    demo->resetIndex();
-    demo->showCurrIndex();
+    demo->showReset();
   }
 }
 
