@@ -62,12 +62,23 @@ void Demo::decrementIndex()
   myPrevRobotIndex = findPrevRobotIndex(myCurrIndex);
 }
 
+// remove everything from the display
 void Demo::clearDisplay()
 {
   // remove previous robot position
   myViewer.removeAllShapes();
   // remove previous cloud
   myViewer.removeAllPointClouds();
+}
+
+// remove only the current index from the display
+void Demo::clearIndex(const int index)
+{
+  std::ostringstream os;
+  os.str("");
+  os << index;
+  myViewer.removeShape("robot" + os.str());
+  myViewer.removePointCloud("laser" + os.str());
 }
 
 void Demo::showCurrIndex()
@@ -319,10 +330,14 @@ void Demo::showNext()
 // Do this when previous key is pressed
 void Demo::showPrevious()
 {
+  clearIndex(myCurrIndex);
   decrementIndex();
-  clearDisplay();
-  if (myAggregateMode) aggregateToIndex(myCurrIndex - 1);
-  showCurrIndex();
+  if (!myAggregateMode) showCurrIndex();
+  else {
+    if (myCurrIndex == myRobotInfos.size() - 1) 
+      aggregateToIndex(myCurrIndex);
+    printCurrIndexInfo();
+  }
 }
 
 // Do this when reset key is pressed

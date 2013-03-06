@@ -50,6 +50,7 @@ private:
   void resetIndex();
   void printCurrIndexInfo();
   void clearDisplay();
+  void clearIndex(const int index);
   void aggregateToIndex(int toIndex);
 };
 
