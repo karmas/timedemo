@@ -48,8 +48,8 @@ int main(int argc, char* argv[])
   nearestNeighbors(laserCloudsVector);
 
   // now display the demo
-  Demo demo("TIME STAMP DEMO", robotTypes,
-            robotInfosVector, laserCloudsVector);
+  //Demo demo("TIME STAMP DEMO", robotTypes,
+  //          robotInfosVector, laserCloudsVector);
 
   return 0;
 }
@@ -113,4 +113,20 @@ void nearestNeighbors(std::vector<TSCloud *> &laserCloudsVector)
   for (size_t i = 0; i < indices.size(); i++)
     std::cout << i+1 << ") " << features.row(indices[i])
       << std::endl;
+
+  const int nClusters = 3;
+  cv::Mat centers(nClusters, 3, CV_32FC1);	// cluster centers
+  cvflann::KMeansIndexParams kMeansParams;
+  typedef cv::flann::L2<float> Distance;// distance functor
+
+  Distance d;
+  cv::flann::hierarchicalClustering<Distance>(features, centers, 
+      kMeansParams, d);
+
+  std::cout << "Centers are: " << std::endl;
+  for (int i = 0; i < centers.rows; i++) {
+    for (int j = 0; j < centers. cols; j++)
+      std::cout << centers.at<float>(i,j) << ",";
+    std::cout << std::endl;
+  }
 }
