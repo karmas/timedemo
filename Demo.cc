@@ -1,6 +1,7 @@
 #include "pcl/io/pcd_io.h"
 
 #include "Demo.h"
+#include "cloudUtils.h"
 
 
 const int Demo::INVALID = -99;
@@ -27,6 +28,8 @@ Demo::Demo(const std::string &title,
   printColorInfo();
   displayControls();
   colorClouds();
+  myClusterCenters = cluster(myLaserClouds);
+  markClusterCenters();
 
   myViewer.registerKeyboardCallback(viewerKeyHandler, (void *)this);
   printTitle("Current Display information");
@@ -67,6 +70,7 @@ void Demo::clearDisplay()
 {
   // remove previous robot position
   myViewer.removeAllShapes();
+  markClusterCenters();
   // remove previous cloud
   myViewer.removeAllPointClouds();
 }
@@ -292,6 +296,18 @@ void Demo::colorClouds()
 
     // now mark the previous robot in current cloud
     markPrevRobot(prevRobotIndex, currLaserCloud);
+  }
+}
+
+// show cluster centers in the display
+void Demo::markClusterCenters()
+{
+  std::ostringstream os;
+  for (size_t i = 0; i < myClusterCenters->size(); i++) {
+    os << i;
+    myViewer.addSphere(myClusterCenters->points[i], 100, 0, 200, 0,
+	"cluster" + os.str());
+    os.str("");
   }
 }
 

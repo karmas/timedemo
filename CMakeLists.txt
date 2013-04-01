@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 
 # source files
-set (SRC fileUtils.cc Demo.cc timedemo.cc)
+set (SRC fileUtils.cc cloudUtils.cc Demo.cc timedemo.cc)
 
 # program name
 set (PROG timedemo)
@@ -18,6 +18,7 @@ include_directories(/usr/include/opencv)
 # PCL libraries location
 link_directories (${PCL_LIBRARY_DIRS})
 
+add_definitions (-Wno-deprecated-declarations -g)
 # make the executable
 add_executable (${PROG} ${SRC})
 
